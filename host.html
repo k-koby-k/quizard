@@ -137,6 +137,12 @@
   .phase-answering { background: rgba(64,192,240,0.15); color: var(--accent2); border: 1px solid rgba(64,192,240,0.3); }
   .phase-review { background: rgba(64,192,128,0.15); color: var(--success); border: 1px solid rgba(64,192,128,0.3); }
 
+  /* CONNECTION BADGE */
+  .conn-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight:700; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--muted); }
+  .conn-connected { background: rgba(64,192,240,0.08); color: var(--accent2); border-color: rgba(64,192,240,0.25); }
+  .conn-disconnected { background: rgba(240,64,96,0.08); color: var(--danger); border-color: rgba(240,64,96,0.2); }
+  .conn-connecting { background: rgba(104,104,160,0.06); color: var(--muted); border-color: var(--border); }
+
   .flex { display: flex; gap: 1rem; }
   .mt1 { margin-top: 1rem; }
   .mt2 { margin-top: 2rem; }
@@ -157,6 +163,8 @@
     <h1>QUIZARD</h1>
     <p>Host Dashboard</p>
   </div>
+
+  <div style="text-align:center;margin-bottom:1rem"><span id="conn-status" class="conn-badge conn-connecting">Connecting…</span></div>
 
   <!-- SETUP SCREEN -->
   <div id="screen-setup" class="screen active">
@@ -246,12 +254,34 @@
   </div>
 </div>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-+4V6F6z7QkQ1d8r3lqzZtq6EQi3g6oYg3kYfV+X81s4MocQqjY4zJgk+6v1c8a4/" crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 // backend override: use ?server=<url> or set window.__BACKEND__ before this script
 const DEFAULT_BACKEND = 'https://quizard-backend.fly.dev';
 const BACKEND_URL = (new URLSearchParams(location.search).get('server')) || window.__BACKEND__ || (location.hostname.endsWith('.vercel.app') ? DEFAULT_BACKEND : location.origin);
-const socket = io(BACKEND_URL);
+
+// connection status UI
+function setConnStatus(status) {
+  const el = document.getElementById('conn-status');
+  if (!el) return;
+  el.classList.remove('conn-connecting','conn-connected','conn-disconnected');
+  if (status === 'connected') { el.textContent = 'Connected'; el.classList.add('conn-connected'); }
+  else if (status === 'disconnected') { el.textContent = 'Disconnected'; el.classList.add('conn-disconnected'); }
+  else { el.textContent = 'Connecting…'; el.classList.add('conn-connecting'); }
+}
+setConnStatus('connecting');
+
+let socket;
+if (typeof io === 'function') {
+  socket = io(BACKEND_URL);
+  socket.on('connect', () => setConnStatus('connected'));
+  socket.on('disconnect', () => setConnStatus('disconnected'));
+  socket.on('connect_error', () => setConnStatus('disconnected'));
+} else {
+  setConnStatus('disconnected');
+  socket = { emit: () => {}, on: () => {} };
+}
+
 let roomCode = null;
 let hostQuestions = [];
 let players = {};
