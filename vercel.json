@@ -2,12 +2,14 @@
   "version": 2,
   "name": "quizard",
   "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
     { "src": "host.html", "use": "@vercel/static" },
     { "src": "player.html", "use": "@vercel/static" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/", "dest": "/host.html" },
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/index.html", "dest": "/index.html" },
     { "src": "/host.html", "dest": "/host.html" },
     { "src": "/player.html", "dest": "/player.html" },
     { "src": "/(.*)", "dest": "/$1" }

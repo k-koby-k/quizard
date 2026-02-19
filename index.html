@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QUIZARD — Real-Time Bidding Trivia</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,500;0,700;1,300&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a40;
+    --accent: #f0c040;
+    --accent2: #40c0f0;
+    --danger: #f04060;
+    --success: #40c080;
+    --text: #e8e8f0;
+    --muted: #6868a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,192,64,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,192,64,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridShift 20s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes gridShift {
+    0%   { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+    z-index: 0;
+    animation: float 8s ease-in-out infinite;
+  }
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: var(--accent);
+    top: -150px; left: -150px;
+    animation-delay: 0s;
+  }
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: var(--accent2);
+    bottom: -100px; right: -100px;
+    animation-delay: -4s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0); }
+    50%       { transform: translate(30px, 20px); }
+  }
+
+  /* Main content */
+  .container {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  /* Logo / title */
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 18vw, 9rem);
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: var(--accent);
+    text-shadow:
+      0 0 60px rgba(240,192,64,0.4),
+      0 0 120px rgba(240,192,64,0.15);
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .tagline {
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    margin-bottom: 3.5rem;
+    animation: fadeDown 0.7s 0.15s ease both;
+  }
+
+  /* Cards */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    animation: fadeUp 0.7s 0.3s ease both;
+  }
+
+  .role-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem 1.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .role-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .role-card.host::before   { background: radial-gradient(circle at 50% 0%, rgba(240,192,64,0.12), transparent 70%); }
+  .role-card.player::before { background: radial-gradient(circle at 50% 0%, rgba(64,192,240,0.12), transparent 70%); }
+
+  .role-card:hover { transform: translateY(-4px); }
+  .role-card:hover::before { opacity: 1; }
+
+  .role-card.host:hover   { border-color: var(--accent); box-shadow: 0 8px 40px rgba(240,192,64,0.15); }
+  .role-card.player:hover { border-color: var(--accent2); box-shadow: 0 8px 40px rgba(64,192,240,0.15); }
+
+  .role-icon {
+    font-size: 2.8rem;
+    line-height: 1;
+  }
+
+  .role-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+  }
+
+  .role-card.host   .role-label { color: var(--accent); }
+  .role-card.player .role-label { color: var(--accent2); }
+
+  .role-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .role-btn {
+    display: inline-block;
+    padding: 0.6rem 1.6rem;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    margin-top: 0.5rem;
+    transition: filter 0.2s;
+  }
+
+  .role-card.host   .role-btn { background: var(--accent); color: #0a0a0f; }
+  .role-card.player .role-btn { background: var(--accent2); color: #0a0a0f; }
+
+  .role-card:hover .role-btn { filter: brightness(1.1); }
+
+  /* Rules strip */
+  .rules {
+    margin-top: 2.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    flex-wrap: wrap;
+    animation: fadeUp 0.7s 0.45s ease both;
+  }
+
+  .rule {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .rule-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+  }
+
+  .rule-lbl {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Responsive */
+  @media (max-width: 440px) {
+    .cards { grid-template-columns: 1fr; }
+    .rules { gap: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="container">
+  <div class="logo">QUIZARD</div>
+  <p class="tagline">Real-time bidding trivia — bet big, win bigger</p>
+
+  <div class="cards">
+    <a href="host.html" class="role-card host">
+      <div class="role-icon">🎙️</div>
+      <div class="role-label">Host</div>
+      <p class="role-desc">Create a room, add questions, and run the game live.</p>
+      <span class="role-btn">Host A Game</span>
+    </a>
+
+    <a href="player.html" class="role-card player">
+      <div class="role-icon">🎮</div>
+      <div class="role-label">Player</div>
+      <p class="role-desc">Join with a room code, bid your cash, and outsmart the room.</p>
+      <span class="role-btn">Join A Game</span>
+    </a>
+  </div>
+
+  <div class="rules">
+    <div class="rule">
+      <span class="rule-val">$1,000</span>
+      <span class="rule-lbl">Starting Balance</span>
+    </div>
+    <div class="rule">
+      <span class="rule-val">BID</span>
+      <span class="rule-lbl">Each Round</span>
+    </div>
+    <div class="rule">
+      <span class="rule-val">2×</span>
+      <span class="rule-lbl">Correct Answer</span>
+    </div>
+    <div class="rule">
+      <span class="rule-val">💀</span>
+      <span class="rule-lbl">Hit Zero</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

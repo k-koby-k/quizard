@@ -26,10 +26,15 @@
    ```
 
 6. Open your browser:
+   - **Landing page:** `http://localhost:3000/` or `http://localhost:8080/` (shows `index.html`)
    - **Host:** `http://localhost:3000/host.html` (or via nginx `http://localhost:8080/host.html`)
    - **Players:** `http://localhost:3000/player.html` (or via nginx `http://localhost:8080/player.html`)
 
 > When testing across devices or via the ngrok URL, the client will attempt to connect to the same origin by default. You can also force the client to use a backend URL with the `?server=` query (e.g. `https://abcd.ngrok.io/host.html?server=https://abcd.ngrok.io`).
+
+---
+
+Deployment note: the front-end is published on Vercel (project `quizard`) and the landing page will be served at the project root.
 
 ---
 
