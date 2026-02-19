@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>QUIZARD — Player</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,500;0,700;1,300&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a40;
+    --accent: #f0c040;
+    --accent2: #40c0f0;
+    --danger: #f04060;
+    --success: #40c080;
+    --text: #e8e8f0;
+    --muted: #6868a0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  h1, h2, h3, .big { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.05em; }
+
+  #app { flex: 1; padding: 1.5rem 1rem; max-width: 480px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; }
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* HEADER */
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--accent); margin-bottom: 0.25rem; }
+  .sub { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 2rem; }
+
+  /* INPUTS */
+  input {
+    background: var(--surface); border: 2px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 1rem 1.2rem; width: 100%; font-family: inherit;
+    font-size: 1.1rem; outline: none; transition: border 0.2s; margin-bottom: 1rem;
+  }
+  input:focus { border-color: var(--accent); }
+  input.code-input {
+    font-family: 'Bebas Neue', sans-serif; font-size: 3rem; text-align: center;
+    letter-spacing: 0.5em; text-transform: uppercase; padding: 1.2rem;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: block; width: 100%; padding: 1rem 2rem; border-radius: 10px; border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .btn-primary { background: var(--accent); color: #0a0a0f; margin-bottom: 0.75rem; }
+  .btn-primary:hover { background: #ffd060; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--success); color: #0a0a0f; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+
+  /* MONEY DISPLAY */
+  .money-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .money-bar .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .money-bar .amount { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--accent); }
+  .money-bar .name { font-weight: 700; }
+
+  /* QUESTION */
+  .question-box {
+    background: linear-gradient(135deg, #1a1a30, #0f0f22);
+    border: 2px solid var(--accent2); border-radius: 14px;
+    padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; flex-shrink: 0;
+  }
+  .q-num { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 0.5rem; }
+  .q-text { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--text); line-height: 1.2; }
+
+  /* BIDDING */
+  .bid-section { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+  .bid-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .preset-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--accent);
+    border-radius: 8px; padding: 0.75rem; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem; cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .preset-btn:hover { border-color: var(--accent); background: rgba(240,192,64,0.1); }
+  .preset-btn.selected { background: rgba(240,192,64,0.2); border-color: var(--accent); }
+
+  .custom-bid-wrap { display: flex; gap: 0.5rem; align-items: center; }
+  .custom-bid-wrap input { margin-bottom: 0; flex: 1; }
+  .custom-bid-wrap .dollar { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--accent); }
+
+  /* STATUS STATES */
+  .status-big {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 1rem;
+  }
+  .status-icon { font-size: 5rem; }
+  .status-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; }
+  .status-sub { color: var(--muted); font-size: 0.95rem; }
+
+  .result-win { color: var(--success); }
+  .result-lose { color: var(--danger); }
+  .result-elim { color: var(--danger); opacity: 0.7; }
+
+  /* WAITING ANIMATION */
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .error-msg { color: var(--danger); font-size: 0.9rem; text-align: center; margin-top: 0.5rem; min-height: 1.2em; }
+
+  /* PHASE STRIP */
+  .phase-strip {
+    text-align: center; padding: 0.4rem;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700;
+    margin-bottom: 1rem; border-radius: 6px;
+  }
+  .phase-bid-strip { background: rgba(240,192,64,0.15); color: var(--accent); }
+  .phase-ans-strip { background: rgba(64,192,240,0.15); color: var(--accent2); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- JOIN SCREEN -->
+  <div id="screen-join" class="screen active">
+    <div class="logo">QUIZARD</div>
+    <div class="sub">Enter to play</div>
+    <input type="text" id="input-name" placeholder="Your name" maxlength="20" />
+    <input type="text" id="input-code" class="code-input" placeholder="CODE" maxlength="5" />
+    <button class="btn btn-primary" onclick="joinGame()">JOIN GAME</button>
+    <div class="error-msg" id="join-error"></div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="screen-lobby" class="screen">
+    <div class="status-big">
+      <div class="status-icon pulse">🎮</div>
+      <div class="status-title" id="lobby-name">Hey!</div>
+      <div class="status-sub">Waiting for the host to start…</div>
+      <div style="margin-top:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 2rem;font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--accent)" id="lobby-code"></div>
+    </div>
+  </div>
+
+  <!-- BIDDING -->
+  <div id="screen-bid" class="screen" style="flex-direction:column">
+    <div class="money-bar">
+      <div><div class="label">Playing as</div><div class="name" id="bid-player-name"></div></div>
+      <div style="text-align:right"><div class="label">Balance</div><div class="amount" id="bid-money"></div></div>
+    </div>
+    <div class="phase-strip phase-bid-strip">💰 Bidding Phase — Place Your Bet</div>
+    <div class="question-box">
+      <div class="q-num" id="bid-q-num"></div>
+      <div class="q-text" id="bid-q-text"></div>
+    </div>
+    <div class="bid-section">
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.25rem">Quick bets:</div>
+      <div class="bid-presets" id="bid-presets"></div>
+      <div style="font-size:0.85rem;color:var(--muted);margin:0.5rem 0 0.25rem">Or enter amount:</div>
+      <div class="custom-bid-wrap">
+        <div class="dollar">$</div>
+        <input type="number" id="custom-bid" placeholder="Custom amount" min="0" oninput="clearPresets()" />
+      </div>
+      <button class="btn btn-primary" onclick="submitBid()" id="btn-submit-bid">PLACE BID</button>
+    </div>
+  </div>
+
+  <!-- ANSWER -->
+  <div id="screen-answer" class="screen" style="flex-direction:column">
+    <div class="money-bar">
+      <div><div class="label">Playing as</div><div class="name" id="ans-player-name"></div></div>
+      <div style="text-align:right"><div class="label">Balance</div><div class="amount" id="ans-money"></div></div>
+    </div>
+    <div class="phase-strip phase-ans-strip">✍️ Answer Phase</div>
+    <div class="question-box">
+      <div class="q-num" id="ans-q-num"></div>
+      <div class="q-text" id="ans-q-text"></div>
+    </div>
+    <div style="margin-bottom:0.5rem;color:var(--muted);font-size:0.85rem">Your bid: <strong style="color:var(--accent)" id="ans-bid-display"></strong></div>
+    <input type="text" id="answer-input" placeholder="Type your answer…" style="font-size:1.1rem;margin-bottom:1rem" />
+    <button class="btn btn-primary" onclick="submitAnswer()" id="btn-submit-ans">SUBMIT ANSWER</button>
+    <div id="ans-error" class="error-msg"></div>
+  </div>
+
+  <!-- WAITING FOR REVIEW -->
+  <div id="screen-waiting-review" class="screen">
+    <div class="status-big">
+      <div class="status-icon pulse">⏳</div>
+      <div class="status-title">Hang Tight</div>
+      <div class="status-sub">Host is reviewing answers…</div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="screen-result" class="screen">
+    <div class="status-big" id="result-content"></div>
+    <div style="padding-bottom:1.5rem">
+      <div class="money-bar">
+        <div><div class="label">New Balance</div><div class="amount" id="result-money"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELIMINATED -->
+  <div id="screen-eliminated" class="screen">
+    <div class="status-big">
+      <div class="status-icon">💀</div>
+      <div class="status-title result-elim">Eliminated</div>
+      <div class="status-sub">You've been knocked out of the game.</div>
+      <div class="status-sub" style="margin-top:1rem;font-style:italic">Watch the remaining rounds on the host screen.</div>
+    </div>
+  </div>
+
+  <!-- FINISHED -->
+  <div id="screen-finished" class="screen">
+    <div class="status-big">
+      <div class="status-icon">🏁</div>
+      <div class="status-title">Game Over!</div>
+      <div class="status-sub">Check the host screen for final results.</div>
+      <button class="btn btn-primary" style="width:auto;padding:0.75rem 2rem;margin-top:1.5rem" onclick="location.reload()">Play Again</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// backend override: use ?server=<url> or set window.__BACKEND__ before this script
+const BACKEND_URL = (new URLSearchParams(location.search).get('server')) || window.__BACKEND__ || location.origin;
+const socket = io(BACKEND_URL);
+let myName = ''; 
+let myMoney = 1000;
+let myBid = 0;
+let currentQ = { num: '', text: '' };
+let eliminated = false;
+
+function joinGame() {
+  const name = document.getElementById('input-name').value.trim();
+  const code = document.getElementById('input-code').value.trim().toUpperCase();
+  if (!name) return setError('join-error', 'Enter your name');
+  if (!code || code.length < 4) return setError('join-error', 'Enter a valid room code');
+  myName = name;
+  socket.emit('player:join', { code, name });
+}
+
+socket.on('player:joined', ({ name, money, code }) => {
+  myMoney = money;
+  document.getElementById('lobby-name').textContent = 'Hey, ' + name + '!';
+  document.getElementById('lobby-code').textContent = code;
+  showScreen('lobby');
+});
+
+socket.on('round:start', ({ questionIndex, total, question }) => {
+  if (eliminated) return;
+  myBid = 0;
+  currentQ = { num: `Question ${questionIndex + 1} of ${total}`, text: question };
+
+  // Bid screen
+  document.getElementById('bid-player-name').textContent = myName;
+  document.getElementById('bid-money').textContent = '$' + myMoney;
+  document.getElementById('bid-q-num').textContent = currentQ.num;
+  document.getElementById('bid-q-text').textContent = currentQ.text;
+  document.getElementById('btn-submit-bid').disabled = false;
+  document.getElementById('btn-submit-bid').textContent = 'PLACE BID';
+  document.getElementById('custom-bid').value = '';
+
+  // Build presets
+  const presets = document.getElementById('bid-presets');
+  const amounts = [
+    { label: '25%', val: Math.floor(myMoney * 0.25) },
+    { label: '50%', val: Math.floor(myMoney * 0.5) },
+    { label: '75%', val: Math.floor(myMoney * 0.75) },
+    { label: 'ALL IN', val: myMoney },
+  ];
+  presets.innerHTML = amounts.map(a => `
+    <div class="preset-btn" onclick="selectPreset(${a.val}, this)">
+      ${a.label}<br><span style="font-size:1rem">$${a.val}</span>
+    </div>`).join('');
+
+  showScreen('bid');
+});
+
+socket.on('player:bid_confirmed', ({ bid }) => {
+  myBid = bid;
+  // Switch to answer screen info
+  document.getElementById('ans-player-name').textContent = myName;
+  document.getElementById('ans-money').textContent = '$' + myMoney;
+  document.getElementById('ans-q-num').textContent = currentQ.num;
+  document.getElementById('ans-q-text').textContent = currentQ.text;
+  document.getElementById('ans-bid-display').textContent = '$' + bid;
+  document.getElementById('btn-submit-bid').textContent = '✓ BID PLACED';
+  document.getElementById('btn-submit-bid').disabled = true;
+  // Don't show answer yet - wait for lock
+});
+
+socket.on('round:answer_phase', () => {
+  if (eliminated) return;
+  document.getElementById('answer-input').value = '';
+  document.getElementById('btn-submit-ans').disabled = false;
+  document.getElementById('btn-submit-ans').textContent = 'SUBMIT ANSWER';
+  document.getElementById('ans-error').textContent = '';
+  showScreen('answer');
+});
+
+socket.on('player:answer_confirmed', () => {
+  document.getElementById('btn-submit-ans').textContent = '✓ SUBMITTED';
+  document.getElementById('btn-submit-ans').disabled = true;
+});
+
+socket.on('round:review', () => {
+  if (!eliminated) showScreen('waiting-review');
+});
+
+socket.on('player:result', ({ correct, bid, money, eliminated: isElim }) => {
+  myMoney = money;
+  document.getElementById('result-money').textContent = '$' + money;
+
+  const content = document.getElementById('result-content');
+  if (isElim) {
+    eliminated = true;
+    showScreen('eliminated');
+    return;
+  }
+  if (correct) {
+    content.innerHTML = `
+      <div class="status-icon">🎉</div>
+      <div class="status-title result-win">Correct!</div>
+      <div class="status-sub">You bid $${bid} and doubled it!</div>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="status-icon">😬</div>
+      <div class="status-title result-lose">Wrong Answer</div>
+      <div class="status-sub">You lost your $${bid} bid.</div>
+    `;
+  }
+  showScreen('result');
+});
+
+socket.on('game:finished', () => {
+  showScreen('finished');
+});
+
+socket.on('error', ({ msg }) => {
+  setError('join-error', msg);
+});
+
+// ── ACTIONS ────────────────────────────────────────────────────────
+let selectedPreset = null;
+function selectPreset(val, el) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPreset = val;
+  document.getElementById('custom-bid').value = '';
+}
+function clearPresets() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+  selectedPreset = null;
+}
+function submitBid() {
+  const custom = document.getElementById('custom-bid').value;
+  const bid = selectedPreset !== null ? selectedPreset : parseInt(custom);
+  if (isNaN(bid) || bid < 0) return;
+  if (bid > myMoney) return;
+  socket.emit('player:bid', { bid });
+}
+function submitAnswer() {
+  const ans = document.getElementById('answer-input').value.trim();
+  if (!ans) { document.getElementById('ans-error').textContent = 'Type your answer first!'; return; }
+  socket.emit('player:answer', { answer: ans });
+}
+
+// ── UTIL ───────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+function setError(id, msg) {
+  document.getElementById(id).textContent = msg;
+}
+
+document.getElementById('input-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinGame();
+});
+document.getElementById('answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAnswer();
+});
+</script>
+</body>
+</html>

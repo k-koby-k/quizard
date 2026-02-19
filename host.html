@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QUIZARD — Host</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,500;0,700;1,300&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a40;
+    --accent: #f0c040;
+    --accent2: #40c0f0;
+    --danger: #f04060;
+    --success: #40c080;
+    --text: #e8e8f0;
+    --muted: #6868a0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  h1, h2, h3, .big { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.05em; }
+
+  /* LAYOUT */
+  #app { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* HEADER */
+  .site-header { text-align: center; margin-bottom: 3rem; }
+  .site-header h1 { font-size: 4rem; color: var(--accent); }
+  .site-header p { color: var(--muted); font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* CARDS */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+
+  /* INPUTS */
+  input, textarea {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 0.75rem 1rem; width: 100%; font-family: inherit;
+    font-size: 1rem; outline: none; transition: border 0.2s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-block; padding: 0.75rem 2rem; border-radius: 8px; border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .btn-primary { background: var(--accent); color: #0a0a0f; }
+  .btn-primary:hover { background: #ffd060; transform: translateY(-1px); }
+  .btn-secondary { background: transparent; color: var(--accent2); border: 1px solid var(--accent2); }
+  .btn-secondary:hover { background: rgba(64,192,240,0.1); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #ff6080; }
+  .btn-success { background: var(--success); color: #0a0a0f; }
+  .btn-success:hover { background: #60e0a0; }
+  .btn-full { width: 100%; display: block; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* QUESTION BUILDER */
+  .question-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.2rem; margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 1rem;
+  }
+  .question-num { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--accent); min-width: 2rem; }
+  .question-item textarea { min-height: 60px; }
+  .remove-q { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem; padding: 0.25rem; flex-shrink: 0; }
+  .remove-q:hover { color: #ff8080; }
+
+  /* ROOM CODE */
+  .room-code-display {
+    text-align: center; background: var(--surface); border: 2px solid var(--accent);
+    border-radius: 16px; padding: 2rem; margin: 2rem 0;
+  }
+  .room-code-display .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted); }
+  .room-code-display .code { font-family: 'Bebas Neue', sans-serif; font-size: 6rem; color: var(--accent); line-height: 1; }
+
+  /* PLAYERS GRID */
+  #players-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+  .player-chip {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem; text-align: center; transition: all 0.3s;
+  }
+  .player-chip.active { border-color: var(--accent2); }
+  .player-chip .pname { font-weight: 700; font-size: 0.95rem; }
+  .player-chip .pmoney { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--accent); }
+
+  /* GAME SCREEN */
+  .question-display {
+    background: linear-gradient(135deg, #1a1a30, #12122a);
+    border: 2px solid var(--accent2); border-radius: 16px;
+    padding: 2rem; text-align: center; margin-bottom: 2rem;
+  }
+  .q-meta { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted); margin-bottom: 0.5rem; }
+  .q-text { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--text); line-height: 1.2; }
+
+  /* REVIEW */
+  .answer-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.2rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .answer-card .aname { font-weight: 700; flex: 1; }
+  .answer-card .abid { color: var(--accent); font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; min-width: 80px; text-align: right; }
+  .answer-card .atext { flex: 2; font-style: italic; color: var(--muted); }
+  .answer-card.correct { border-color: var(--success); background: rgba(64,192,128,0.07); }
+  .answer-card.incorrect { border-color: var(--danger); background: rgba(240,64,96,0.07); }
+  .mark-btns { display: flex; gap: 0.5rem; }
+  .mark-btns .btn { padding: 0.4rem 1rem; font-size: 1rem; }
+
+  /* STANDINGS */
+  .standing-item {
+    display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .standing-item:last-child { border-bottom: none; }
+  .s-rank { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--muted); min-width: 2.5rem; }
+  .s-rank.gold { color: var(--accent); }
+  .s-name { flex: 1; font-weight: 500; }
+  .s-money { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--accent); }
+
+  /* PROGRESS BAR */
+  .progress-bar { background: var(--border); border-radius: 99px; height: 6px; margin: 0.5rem 0; }
+  .progress-fill { background: var(--accent2); height: 100%; border-radius: 99px; transition: width 0.4s; }
+
+  /* PHASE BADGE */
+  .phase-badge {
+    display: inline-block; padding: 0.3rem 1rem; border-radius: 99px;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+  .phase-lobby { background: rgba(104,104,160,0.2); color: var(--muted); border: 1px solid var(--border); }
+  .phase-bidding { background: rgba(240,192,64,0.15); color: var(--accent); border: 1px solid rgba(240,192,64,0.3); }
+  .phase-answering { background: rgba(64,192,240,0.15); color: var(--accent2); border: 1px solid rgba(64,192,240,0.3); }
+  .phase-review { background: rgba(64,192,128,0.15); color: var(--success); border: 1px solid rgba(64,192,128,0.3); }
+
+  .flex { display: flex; gap: 1rem; }
+  .mt1 { margin-top: 1rem; }
+  .mt2 { margin-top: 2rem; }
+  .mb1 { margin-bottom: 1rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media(max-width: 600px) { .grid2 { grid-template-columns: 1fr; } .q-text { font-size: 1.8rem; } }
+
+  .eliminated-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  .elim-chip { background: rgba(240,64,96,0.15); border: 1px solid var(--danger); color: var(--danger); border-radius: 6px; padding: 0.2rem 0.75rem; font-size: 0.85rem; }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="site-header">
+    <h1>QUIZARD</h1>
+    <p>Host Dashboard</p>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="screen active">
+    <div class="card">
+      <h2 style="margin-bottom:1.5rem">Build Your Questions</h2>
+      <div id="questions-container"></div>
+      <button class="btn btn-secondary mt1" onclick="addQuestion()">+ Add Question</button>
+    </div>
+    <button class="btn btn-primary btn-full mt2" onclick="hostGame()">🚀 Host The Game</button>
+  </div>
+
+  <!-- LOBBY SCREEN -->
+  <div id="screen-lobby" class="screen">
+    <span class="phase-badge phase-lobby">Waiting for Players</span>
+    <div class="room-code-display">
+      <div class="label">Room Code</div>
+      <div class="code" id="room-code-display">—</div>
+      <div style="margin-top:0.5rem;color:var(--muted);font-size:0.85rem;">Players go to <strong style="color:var(--text)">your-server/player.html</strong> and enter this code</div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3>Players Joined <span id="player-count" style="color:var(--accent)">0</span></h3>
+      </div>
+      <div id="players-list"></div>
+    </div>
+    <button class="btn btn-primary btn-full mt2" id="btn-start" onclick="startGame()" disabled>▶ Start Game</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <span class="phase-badge phase-bidding" id="phase-label">Bidding Phase</span>
+    <div class="question-display">
+      <div class="q-meta" id="q-meta">Question 1 of 5</div>
+      <div class="q-text" id="q-text"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-bottom:1rem">Bids Status</h3>
+        <div id="bids-status"></div>
+        <div class="progress-bar mt1"><div class="progress-fill" id="bid-progress" style="width:0%"></div></div>
+        <button class="btn btn-primary btn-full mt1" id="btn-lock" onclick="lockBids()">🔒 Lock Bids & Open Answers</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:1rem">Answers Progress</h3>
+        <div id="answers-status" style="color:var(--muted);font-size:0.9rem">Waiting to lock bids first…</div>
+        <div class="progress-bar mt1"><div class="progress-fill" id="ans-progress" style="width:0%;background:var(--accent2)"></div></div>
+        <button class="btn btn-secondary btn-full mt1" id="btn-end-round" onclick="endRound()" disabled>📋 Show Answers for Review</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Live Standings</h3>
+      <div id="live-standings" class="mt1"></div>
+    </div>
+  </div>
+
+  <!-- REVIEW SCREEN -->
+  <div id="screen-review" class="screen">
+    <span class="phase-badge phase-review">Review & Mark Answers</span>
+    <h2 style="margin-bottom:1.5rem">Mark Each Answer</h2>
+    <div id="review-answers"></div>
+
+    <div class="grid2 mt2">
+      <div class="card">
+        <h3 style="margin-bottom:1rem">Updated Standings</h3>
+        <div id="review-standings"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:0.5rem">Eliminated</h3>
+        <div class="eliminated-list" id="review-eliminated"><span style="color:var(--muted);font-size:0.85rem">None yet</span></div>
+        <button class="btn btn-primary btn-full" style="margin-top:1.5rem" id="btn-next-q" onclick="nextQuestion()">Next Question ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINISHED SCREEN -->
+  <div id="screen-finished" class="screen">
+    <div style="text-align:center;margin-bottom:2rem">
+      <h1 style="font-size:5rem;color:var(--accent)">GAME OVER</h1>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:1.5rem">Final Standings</h2>
+      <div id="final-standings"></div>
+    </div>
+    <button class="btn btn-secondary btn-full mt2" onclick="location.reload()">Play Again</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// backend override: use ?server=<url> or set window.__BACKEND__ before this script
+const BACKEND_URL = (new URLSearchParams(location.search).get('server')) || window.__BACKEND__ || location.origin;
+const socket = io(BACKEND_URL);
+let roomCode = null;
+let hostQuestions = [];
+let players = {};
+let currentAnswers = [];
+let totalActivePlayers = 0;
+let bidsIn = 0;
+let answersIn = 0;
+
+// ── SETUP ──────────────────────────────────────────────────────────
+function addQuestion() {
+  const idx = document.querySelectorAll('.question-item').length;
+  const div = document.createElement('div');
+  div.className = 'question-item';
+  div.innerHTML = `
+    <div class="question-num">${idx + 1}</div>
+    <textarea placeholder="Enter your question here…"></textarea>
+    <button class="remove-q" onclick="removeQuestion(this)" title="Remove">✕</button>
+  `;
+  document.getElementById('questions-container').appendChild(div);
+  renumberQuestions();
+}
+function removeQuestion(btn) {
+  btn.closest('.question-item').remove();
+  renumberQuestions();
+}
+function renumberQuestions() {
+  document.querySelectorAll('.question-item').forEach((el, i) => {
+    el.querySelector('.question-num').textContent = i + 1;
+  });
+}
+function hostGame() {
+  const texts = [...document.querySelectorAll('.question-item textarea')].map(t => t.value.trim()).filter(Boolean);
+  if (texts.length === 0) return alert('Add at least one question!');
+  hostQuestions = texts.map(text => ({ text }));
+  socket.emit('host:create', { questions: hostQuestions });
+}
+addQuestion();
+
+// ── SOCKET EVENTS ──────────────────────────────────────────────────
+socket.on('host:created', ({ code }) => {
+  roomCode = code;
+  document.getElementById('room-code-display').textContent = code;
+  showScreen('lobby');
+});
+
+socket.on('room:players', ({ players: pl }) => {
+  players = {};
+  pl.forEach(p => players[p.id] = p);
+  renderLobbyPlayers();
+  document.getElementById('player-count').textContent = pl.length;
+  document.getElementById('btn-start').disabled = pl.length < 1;
+});
+
+socket.on('round:start', ({ questionIndex, total, question, players: pl }) => {
+  totalActivePlayers = pl.length;
+  bidsIn = 0; answersIn = 0;
+  players = {};
+  pl.forEach(p => players[p.id] = p);
+
+  document.getElementById('q-meta').textContent = `Question ${questionIndex + 1} of ${total}`;
+  document.getElementById('q-text').textContent = question;
+  document.getElementById('phase-label').textContent = 'Bidding Phase';
+  document.getElementById('phase-label').className = 'phase-badge phase-bidding';
+  document.getElementById('btn-lock').disabled = false;
+  document.getElementById('btn-end-round').disabled = true;
+  document.getElementById('answers-status').textContent = 'Waiting to lock bids first…';
+  document.getElementById('ans-progress').style.width = '0%';
+  renderBidsStatus({});
+  renderLiveStandings();
+  showScreen('game');
+});
+
+socket.on('room:bids', ({ bids }) => {
+  bidsIn = bids.filter(b => b.hasBid).length;
+  const statusEl = document.getElementById('bids-status');
+  statusEl.innerHTML = bids.map(b => `
+    <div class="stat-row">
+      <span>${b.name}</span>
+      <span style="color:${b.hasBid ? 'var(--accent)' : 'var(--muted)'}">${b.hasBid ? '💰 $' + b.bid : '⏳ Waiting'}</span>
+    </div>
+  `).join('');
+  const pct = totalActivePlayers > 0 ? Math.round((bidsIn / totalActivePlayers) * 100) : 0;
+  document.getElementById('bid-progress').style.width = pct + '%';
+});
+
+socket.on('room:answers_progress', ({ answered, total }) => {
+  answersIn = answered;
+  totalActivePlayers = total;
+  document.getElementById('answers-status').textContent = `${answered} / ${total} answered`;
+  const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+  document.getElementById('ans-progress').style.width = pct + '%';
+  if (answered >= total) {
+    document.getElementById('btn-end-round').style.background = 'var(--success)';
+  }
+});
+
+socket.on('round:all_answered', () => {
+  document.getElementById('btn-end-round').disabled = false;
+});
+
+socket.on('host:review', ({ answers }) => {
+  currentAnswers = answers;
+  renderReview(answers, [], []);
+  showScreen('review');
+});
+
+socket.on('host:review_update', ({ answers, eliminated, standings }) => {
+  currentAnswers = answers;
+  renderReview(answers, standings, eliminated);
+});
+
+socket.on('game:finished', ({ standings, eliminated }) => {
+  const el = document.getElementById('final-standings');
+  el.innerHTML = standings.map((p, i) => `
+    <div class="standing-item">
+      <div class="s-rank ${i === 0 ? 'gold' : ''}">${i === 0 ? '🏆' : i + 1}</div>
+      <div class="s-name">${p.name}</div>
+      <div class="s-money">$${p.money}</div>
+    </div>
+  `).join('') + (eliminated.length ? `<div style="margin-top:1rem;color:var(--danger);font-size:0.85rem">Eliminated: ${eliminated.join(', ')}</div>` : '');
+  showScreen('finished');
+});
+
+socket.on('error', ({ msg }) => alert(msg));
+
+// ── ACTIONS ────────────────────────────────────────────────────────
+function startGame() { socket.emit('host:start', { code: roomCode }); }
+function lockBids() {
+  socket.emit('host:lock_bids', { code: roomCode });
+  document.getElementById('phase-label').textContent = 'Answer Phase';
+  document.getElementById('phase-label').className = 'phase-badge phase-answering';
+  document.getElementById('btn-lock').disabled = true;
+  document.getElementById('btn-end-round').disabled = false;
+  document.getElementById('answers-status').textContent = '0 / waiting…';
+}
+function endRound() { socket.emit('host:end_round', { code: roomCode }); }
+function nextQuestion() { socket.emit('host:next', { code: roomCode }); showScreen('game'); }
+function markAnswer(playerId, correct) {
+  socket.emit('host:mark', { code: roomCode, playerId, correct });
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────
+function renderLobbyPlayers() {
+  const el = document.getElementById('players-list');
+  const list = Object.values(players);
+  el.innerHTML = list.length === 0
+    ? '<p style="color:var(--muted);text-align:center;padding:2rem">Waiting for players…</p>'
+    : list.map(p => `
+      <div class="player-chip active">
+        <div class="pname">${p.name}</div>
+        <div class="pmoney">$${p.money}</div>
+      </div>`).join('');
+}
+function renderBidsStatus(bids) {
+  document.getElementById('bids-status').innerHTML = '<p style="color:var(--muted);font-size:0.9rem">Waiting for bids…</p>';
+}
+function renderLiveStandings() {
+  const el = document.getElementById('live-standings');
+  const sorted = Object.values(players).sort((a, b) => b.money - a.money);
+  el.innerHTML = sorted.map((p, i) => `
+    <div class="standing-item">
+      <div class="s-rank ${i === 0 ? 'gold' : ''}">${i + 1}</div>
+      <div class="s-name">${p.name}</div>
+      <div class="s-money">$${p.money}</div>
+    </div>`).join('');
+}
+function renderReview(answers, standings, eliminated) {
+  const el = document.getElementById('review-answers');
+  el.innerHTML = answers.map(a => `
+    <div class="answer-card ${a.correct === true ? 'correct' : a.correct === false ? 'incorrect' : ''}" id="ac-${a.id}">
+      <div class="aname">${a.name}</div>
+      <div class="atext">"${a.answer}"</div>
+      <div class="abid">Bid $${a.bid}</div>
+      <div class="mark-btns">
+        ${a.correct === null ? `
+          <button class="btn btn-success" onclick="markAnswer('${a.id}', true)">✓ Correct</button>
+          <button class="btn btn-danger" onclick="markAnswer('${a.id}', false)">✗ Wrong</button>
+        ` : `<span style="color:${a.correct ? 'var(--success)' : 'var(--danger)'};font-weight:700">${a.correct ? '✓ Correct' : '✗ Wrong'}</span>`}
+      </div>
+    </div>`).join('');
+
+  if (standings.length > 0) {
+    document.getElementById('review-standings').innerHTML = standings.map((p, i) => `
+      <div class="standing-item">
+        <div class="s-rank ${i === 0 ? 'gold' : ''}">${i + 1}</div>
+        <div class="s-name">${p.name}</div>
+        <div class="s-money">$${p.money}</div>
+      </div>`).join('');
+  }
+
+  if (eliminated.length > 0) {
+    document.getElementById('review-eliminated').innerHTML = eliminated.map(n => `<span class="elim-chip">❌ ${n}</span>`).join('');
+  }
+}
+
+// ── SCREENS ─────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>
