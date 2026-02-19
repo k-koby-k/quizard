@@ -33,6 +33,8 @@ function generateCode() {
 }
 
 io.on("connection", (socket) => {
+  console.log('Socket connected:', socket.id, 'origin=', socket.handshake.headers.origin || '-', 'addr=', socket.conn.remoteAddress || socket.handshake.address || '-');
+  socket.on('error', (err) => console.warn('Socket error for', socket.id, err && err.message ? err.message : err));
   // HOST: Create a new room
   socket.on("host:create", ({ questions }) => {
     const code = generateCode();

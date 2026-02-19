@@ -274,9 +274,10 @@ setConnStatus('connecting');
 let socket;
 if (typeof io === 'function') {
   socket = io(BACKEND_URL);
-  socket.on('connect', () => setConnStatus('connected'));
-  socket.on('disconnect', () => setConnStatus('disconnected'));
-  socket.on('connect_error', () => setConnStatus('disconnected'));
+  socket.on('connect', () => { setConnStatus('connected'); console.info('socket connected', socket.id, 'to', BACKEND_URL); });
+  socket.on('disconnect', (reason) => { setConnStatus('disconnected'); console.warn('socket disconnected', reason); });
+  socket.on('connect_error', (err) => { setConnStatus('disconnected'); console.error('socket connect_error', err && err.message ? err.message : err); });
+  socket.on('error', (err) => console.error('socket error', err));
 } else {
   setConnStatus('disconnected');
   socket = { emit: () => {}, on: () => {} };
