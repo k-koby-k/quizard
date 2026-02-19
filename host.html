@@ -249,7 +249,8 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // backend override: use ?server=<url> or set window.__BACKEND__ before this script
-const BACKEND_URL = (new URLSearchParams(location.search).get('server')) || window.__BACKEND__ || location.origin;
+const DEFAULT_BACKEND = 'https://quizard-backend.fly.dev';
+const BACKEND_URL = (new URLSearchParams(location.search).get('server')) || window.__BACKEND__ || (location.hostname.endsWith('.vercel.app') ? DEFAULT_BACKEND : location.origin);
 const socket = io(BACKEND_URL);
 let roomCode = null;
 let hostQuestions = [];
