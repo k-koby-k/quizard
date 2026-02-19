@@ -1,0 +1,29 @@
+app = "quizard-backend"
+
+[build]
+  # use the Dockerfile in the repo
+  image = ""
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [services.concurrency]
+    type = "connections"
+    soft_limit = 1000
+    hard_limit = 2000
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    port = 8080
+    interval = 10000
+    timeout = 2000
+    grace_period = "1s"
+    restart_limit = 0
